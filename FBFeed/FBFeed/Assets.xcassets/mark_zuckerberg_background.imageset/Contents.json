@@ -2,11 +2,11 @@
   "images" : [
     {
       "idiom" : "universal",
+      "filename" : "mark_zuckerberg_background.jpg",
       "scale" : "1x"
     },
     {
       "idiom" : "universal",
-      "filename" : "messenger_icon@2x.png",
       "scale" : "2x"
     },
     {
