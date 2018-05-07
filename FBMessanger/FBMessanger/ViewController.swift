@@ -8,9 +8,14 @@
 
 import UIKit
 
+
+
 class FriendsController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
 
     private let cellId = "cellId"
+    
+    var messages: [Message]?
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -20,23 +25,61 @@ class FriendsController: UICollectionViewController, UICollectionViewDelegateFlo
         
         collectionView?.backgroundColor = .white
         collectionView?.alwaysBounceVertical = true
-        collectionView?.register(FriendCell.self, forCellWithReuseIdentifier: cellId)
+        collectionView?.register(MessageCell.self, forCellWithReuseIdentifier: cellId)
+        
+        setupDate()
     }
     
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 3
+        
+        guard let count = messages?.count else {return 0}
+        
+        return count
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        return collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath)
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! MessageCell
+        
+        guard let message = messages?[indexPath.item] else {return cell}
+        
+        cell.message = message
+        
+        return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: view.frame.width, height: 100)
     }
+    
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let layout = UICollectionViewFlowLayout()
+        let controller = ChatLogController(collectionViewLayout: layout)
+        controller.friend = messages?[indexPath.item].friend
+        navigationController?.pushViewController(controller, animated: true)
+    }
 }
 
-class FriendCell : BaseCell {
+class MessageCell : BaseCell {
+    
+    var message: Message? {
+        didSet {
+            nameLabel.text = message?.friend?.name
+            
+            if let profileImageName = message?.friend?.profileImageName {
+                profileImageView.image = UIImage(named: profileImageName)
+                hasReadImageView.image = UIImage(named: profileImageName)
+            }
+            
+            messageLabel.text = message?.text
+            
+            if let date = message?.date {
+                let dateFormeter = DateFormatter()
+                dateFormeter.dateFormat = "h:mm a"
+                
+                timeLabel.text = dateFormeter.string(from: date as Date)
+            }
+        }
+    }
     
     let profileImageView: UIImageView = {
        let imageView = UIImageView()
@@ -154,7 +197,6 @@ class BaseCell : UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     func setupView() {
-        backgroundColor = .blue
     }
 }
 
