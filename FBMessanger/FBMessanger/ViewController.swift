@@ -8,8 +8,6 @@
 
 import UIKit
 
-
-
 class FriendsController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
 
     private let cellId = "cellId"
@@ -63,12 +61,10 @@ class MessageCell : BaseCell {
     
     override var isHighlighted: Bool {
         didSet {
-            print(isHighlighted)
             backgroundColor = isHighlighted ? UIColor(red: 0, green: 134/255, blue: 249/255, alpha: 1) : .white
             nameLabel.textColor = isHighlighted ? .white : .black
             timeLabel.textColor = isHighlighted ? .white : .black
             messageLabel.textColor = isHighlighted ? .white : .black
-
         }
     }
     
