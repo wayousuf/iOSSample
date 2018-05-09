@@ -7,8 +7,9 @@
 //
 
 import UIKit
+import CoreData
 
-class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
+class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlowLayout, NSFetchedResultsControllerDelegate {
     
     private let cellId = "cellId"
     
@@ -16,14 +17,14 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         didSet {
             navigationItem.title = friend?.name
             
-            messages = friend?.messages?.allObjects as? [Message]
+            //messages = friend?.messages?.allObjects as? [Message]
             
-            messages = messages?.sorted(by: {m1, m2 in m1.date!.compare(m2.date!) == .orderedAscending })
+            //messages = messages?.sorted(by: {m1, m2 in m1.date!.compare(m2.date!) == .orderedAscending })
 
         }
     }
     
-    var messages: [Message]?
+    //var messages: [Message]?
     
     let messageInputContainerView: UIView = {
        let view = UIView()
@@ -52,18 +53,18 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         let delegate = UIApplication.shared.delegate as! AppDelegate
         let context = delegate.persistentContainer.viewContext
         
-        let message = FriendsController.createMessage(text: messageTextFiled.text!, friend: friend!, minutesAgo: 0, context: context, isSender: true)
+        _ = FriendsController.createMessage(text: messageTextFiled.text!, friend: friend!, minutesAgo: 0, context: context, isSender: true)
         
         delegate.saveContext()
         
-        messages?.append(message)
-        
-        let item = (messages?.count)! - 1
-        let insertionIndexPath = IndexPath(item: item, section: 0)
-        
-        collectionView?.insertItems(at: [insertionIndexPath])
-        
-        collectionView?.scrollToItem(at: insertionIndexPath, at: UICollectionViewScrollPosition.bottom, animated: true)
+//        messages?.append(message)
+//
+//        let item = (messages?.count)! - 1
+//        let insertionIndexPath = IndexPath(item: item, section: 0)
+//
+//        collectionView?.insertItems(at: [insertionIndexPath])
+//
+//        collectionView?.scrollToItem(at: insertionIndexPath, at: UICollectionViewScrollPosition.bottom, animated: true)
         messageTextFiled.text = nil
 
     }
@@ -74,26 +75,74 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
         let delegate = UIApplication.shared.delegate as! AppDelegate
         let context = delegate.persistentContainer.viewContext
         
-        let message = FriendsController.createMessage(text: "Here's a text message that was sent a few min ago..", friend: friend!, minutesAgo: 2, context: context)
+        _ = FriendsController.createMessage(text: "Here's a text message that was sent a few min ago..", friend: friend!, minutesAgo: 2, context: context)
         
         delegate.saveContext()
         
-        messages?.append(message)
+//        messages?.append(message)
+//
+//        messages = messages?.sorted(by: { (m1, m2) -> Bool in
+//            return m1.date! > m2.date!
+//        })
+//
+//        if let item = messages?.index(of: message) {
+//            let recevingIndexPath = IndexPath(item: item, section: 0)
+//            collectionView?.insertItems(at: [recevingIndexPath])
+//        }
+    }
+    
+    
+    lazy var fetchResultController: NSFetchedResultsController<Message> = {
+        let delegate = UIApplication.shared.delegate as? AppDelegate
+        let context = delegate?.persistentContainer.viewContext
         
-        //messages = messages?.sorted(by: {m1, m2 in m1.date!.compare(m2.date!) == .orderedDescending })
-
-        messages = messages?.sorted(by: { (m1, m2) -> Bool in
-            return m1.date! > m2.date!
-        })
+        let request: NSFetchRequest<Message> = Message.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: true)]
+        request.predicate = NSPredicate(format: "friend.name = %@", self.friend!.name!)
         
-        if let item = messages?.index(of: message) {
-            let recevingIndexPath = IndexPath(item: item, section: 0)
-            collectionView?.insertItems(at: [recevingIndexPath])
+        let frc = NSFetchedResultsController<Message>(fetchRequest: request, managedObjectContext: context!, sectionNameKeyPath: nil, cacheName: nil)
+        frc.delegate = self
+        return frc
+    }()
+    
+    var blockOperations = [BlockOperation]()
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        if type == NSFetchedResultsChangeType.insert {
+            blockOperations.append(BlockOperation(block: {
+                self.collectionView?.insertItems(at: [newIndexPath!])
+            }))
+            
+            //collectionView?.scrollToItem(at: newIndexPath!, at: .bottom, animated: true)
         }
+    }
+    
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        
+        collectionView?.performBatchUpdates({
+            
+            for operation in self.blockOperations {
+                operation.start()
+            }
+        }, completion: { (completed) in
+            
+            let lastItem = self.fetchResultController.sections![0].numberOfObjects - 1
+            let indexPath = IndexPath(item: lastItem, section: 0)
+            self.collectionView?.scrollToItem(at: indexPath, at: .bottom, animated: true)
+
+        })
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        do {
+            try fetchResultController.performFetch()
+            
+            //print(fetchResultController.sections?[0].numberOfObjects)
+        } catch let err {
+            print(err)
+        }
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Simulate", style: UIBarButtonItemStyle.plain, target: self, action: #selector(simulate))
             
@@ -140,9 +189,13 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
             //guard count = self.messages?.count else {return}
             if isKeyboardShowing {
             
-                let indexPath = IndexPath(item: (self.messages?.count)! - 1, section: 0)
-               
-                self.collectionView?.scrollToItem(at: indexPath, at: UICollectionViewScrollPosition.bottom, animated: true)
+                let lastItem = self.fetchResultController.sections![0].numberOfObjects - 1
+                let indexPath = IndexPath(item: lastItem, section: 0)
+                self.collectionView?.scrollToItem(at: indexPath, at: .bottom, animated: true)
+                
+//                let indexPath = IndexPath(item: (self.messages?.count)! - 1, section: 0)
+//
+//                self.collectionView?.scrollToItem(at: indexPath, at: UICollectionViewScrollPosition.bottom, animated: true)
             }
         }
     }
@@ -168,17 +221,19 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     }
     
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        guard let count = messages?.count else { return 0 }
+        guard let count = fetchResultController.sections?[0].numberOfObjects else {return 0}
+        
+        //guard let count = messages?.count else { return 0 }
         return count
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! ChatLogMessageCell
         
-        cell.messageTextView.text = messages?[indexPath.item].text
+        //guard let message = messages?[indexPath.item] else { return cell }
+        let message = fetchResultController.object(at: indexPath)
         
-        guard let message = messages?[indexPath.item] else { return cell }
-        
+        cell.messageTextView.text = message.text
         
         if let messageText = message.text, let profileImageName =  message.friend?.profileImageName {
             
@@ -228,8 +283,10 @@ class ChatLogController: UICollectionViewController, UICollectionViewDelegateFlo
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+       
+        let message = fetchResultController.object(at: indexPath)
         
-        if let messageText = messages?[indexPath.item].text {
+        if let messageText = message.text {
             
             let size = CGSize(width: 250, height: 1000)
             let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
