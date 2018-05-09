@@ -77,20 +77,20 @@ extension FriendsController {
             donald.name = "Donald Trump"
             donald.profileImageName = "donald_profile"
             
-            createMessage(text: "You're fired", friend: donald, minutesAgo: 5, context: context)
+            _ = FriendsController.createMessage(text: "You're fired", friend: donald, minutesAgo: 5, context: context)
 
             let gandhi = NSEntityDescription.insertNewObject(forEntityName: "Friend", into: context) as! Friend
             gandhi.name = "Mahatma Gandhi"
             gandhi.profileImageName = "gandhi_profile"
             
-            createMessage(text: "Love, Pease, and Joy", friend: gandhi, minutesAgo: 60 * 24, context: context)
+            _ = FriendsController.createMessage(text: "Love, Pease, and Joy", friend: gandhi, minutesAgo: 60 * 24, context: context)
 
             
             let hillary = NSEntityDescription.insertNewObject(forEntityName: "Friend", into: context) as! Friend
             hillary.name = "Hillary Clinton"
             hillary.profileImageName = "hillary_profile"
             
-            createMessage(text: "Please vote for me, you did for Billy!", friend: hillary, minutesAgo: 8 * 60 * 24, context: context)
+            _ = FriendsController.createMessage(text: "Please vote for me, you did for Billy!", friend: hillary, minutesAgo: 8 * 60 * 24, context: context)
             
             
             delegate?.saveContext()
@@ -106,26 +106,27 @@ extension FriendsController {
         steve.name = "Steve Jobs"
         steve.profileImageName = "steve_profile"
         
-        createMessage(text: "Good morning..", friend: steve, minutesAgo: 3, context: context)
-        createMessage(text: "Hello, how are you?", friend: steve, minutesAgo: 2, context: context)
-        createMessage(text: "Are you intrested in buying an Apple device? We have a wide variety of Apple devices that will suit your needs. Please make your purchanse with us",friend: steve, minutesAgo: 1,context: context)
+        _ = FriendsController.createMessage(text: "Good morning..", friend: steve, minutesAgo: 3, context: context)
+        _ = FriendsController.createMessage(text: "Hello, how are you?", friend: steve, minutesAgo: 2, context: context)
+        _ = FriendsController.createMessage(text: "Are you intrested in buying an Apple device? We have a wide variety of Apple devices that will suit your needs. Please make your purchanse with us",friend: steve, minutesAgo: 1,context: context)
         
         // response message
-        createMessage(text: "Yes, totally looking to by an iPhone 8.",friend: steve, minutesAgo: 1,context: context, isSender: true)
+        _ = FriendsController.createMessage(text: "Yes, totally looking to by an iPhone 8.",friend: steve, minutesAgo: 1,context: context, isSender: true)
         
-        createMessage(text: "Totally understand that you want the new iPhone 8, but you'll have to wait until September for the new release. Sorry but thats just how Apple likes to do things.",friend: steve, minutesAgo: 1,context: context)
+        _ = FriendsController.createMessage(text: "Totally understand that you want the new iPhone 8, but you'll have to wait until September for the new release. Sorry but thats just how Apple likes to do things.",friend: steve, minutesAgo: 1,context: context)
         
-        createMessage(text: "Absolutely, I'll just use my gigantic iPhone 7 Plus until then!!!",friend: steve, minutesAgo: 1,context: context, isSender: true)
+        _ = FriendsController.createMessage(text: "Absolutely, I'll just use my gigantic iPhone 7 Plus until then!!!",friend: steve, minutesAgo: 1,context: context, isSender: true)
 
 
     }
     
-    private func createMessage(text: String, friend: Friend, minutesAgo: Double, context: NSManagedObjectContext, isSender: Bool = false) {
+    static func createMessage(text: String, friend: Friend, minutesAgo: Double, context: NSManagedObjectContext, isSender: Bool = false) -> Message {
         let message = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as! Message
         message.friend = friend
         message.text = text
         message.date = Date().addingTimeInterval(-minutesAgo * 60)
         message.isSender = isSender
+        return message
     }
     
     func loadData() {
